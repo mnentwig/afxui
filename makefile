@@ -1,4 +1,8 @@
 all: 	axfui
-axfui: 	main.c midimsg_t.c
-	gcc -Wall -O -o axfui main.c
-	strip axfui
+axfui: 	main.cxx midimsg_t.c midiEngine_t.c app.cxx
+	g++ -Wall -O -o afxui `fltk-config --cflags --ldflags` main.cxx
+#	strip afxui
+clean:
+	rm -f afxui
+.PHONY:
+	clean
