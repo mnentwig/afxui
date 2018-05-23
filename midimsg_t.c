@@ -61,8 +61,10 @@ void midimsg_send(midimsg_t* self, int fd){
   int nRem = self->n;
   while (nRem > 0){
     int n = write(fd, tmp, nRem);
-    if (n > 0)
+    if (n > 0){
       nRem -= n;
+      tmp += n;
+    }
   }
 }
 
