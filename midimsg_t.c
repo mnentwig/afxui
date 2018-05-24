@@ -64,7 +64,7 @@ void midimsg_send(midimsg_t* self, int fd){
     if (n > 0){
       nRem -= n;
       tmp += n;
-    }
+    } else sleep(0.005);
   }
 }
 

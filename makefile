@@ -4,6 +4,6 @@ axfui: 	main.cxx midimsg_t.c midiEngine_t.c app.cxx
 	strip afxui
 clean:
 	rm -f afxui
-	rm *~
+	rm -f *~
 .PHONY:
 	clean

@@ -43,33 +43,44 @@ void midiEngine_delete(midiEngine_t* self){
 // 0: caller should sleep
 // 1: did some work
 int midiEngine_run(midiEngine_t* self){
-  char c;
-  int n = read(self->fd, (void*)&c, 1);
-  if (n < -1){
-    fprintf(stderr, "MIDI read: IO error %i\n", n);
-    exit(EXIT_FAILURE);
+  int retVal = 0;
+
+  // === read all available data ===
+  while (1){
+    char c;
+    int n = read(self->fd, (void*)&c, 1);
+    if (n < -1){
+      fprintf(stderr, "MIDI read: IO error %i\n", n);
+      exit(EXIT_FAILURE);
+    }
+    if (n < 1)
+      goto breakReadDone;
+    retVal = 1;
+    
+    if (self->msgInbound == NULL)
+      self->msgInbound = midimsg_new(32);
+    
+    if (c == 0xF0)
+      midimsg_clear(self->msgInbound);
+    
+    midimsg_add(self->msgInbound, /*count*/1, /*data*/(int)c);
+    if (c == 0xF7){
+      midimsg_queuePush(self->queueInbound, self->msgInbound);
+      self->msgInbound = NULL;
+    }    
   }
-  if (n < 1){
-    if (midimsg_queueIsEmpty(self->queueOutbound))
-      return 0;
+ breakReadDone:
+  
+  // === write one message ===
+  if (!midimsg_queueIsEmpty(self->queueOutbound)){
     midimsg_t* m = midimsg_queuePop(self->queueOutbound);
+    //printf("sending "); midimsg_dump(m);
     midimsg_send(m, self->fd);
     midimsg_delete(m);
-    return 1;
+    retVal = true;
   }
 
-  if (self->msgInbound == NULL)
-    self->msgInbound = midimsg_new(32);
-  
-  if (c == 0xF0)
-    midimsg_clear(self->msgInbound);
-  
-  midimsg_add(self->msgInbound, /*count*/1, /*data*/(int)c);
-  if (c == 0xF7){
-    midimsg_queuePush(self->queueInbound, self->msgInbound);
-    self->msgInbound = NULL;
-  }
-  return 1;
+  return retVal;
 }
 
 void midiEngine_GET_BLOCK_PARAMETER_VALUE(midiEngine_t* self, int blockId, int paramId){
